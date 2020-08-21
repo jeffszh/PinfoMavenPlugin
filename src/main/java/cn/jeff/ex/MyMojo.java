@@ -16,9 +16,6 @@ package cn.jeff.ex;
  * limitations under the License.
  */
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -28,7 +25,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Properties;
 
 @Mojo(name = "p-info", defaultPhase = LifecyclePhase.COMPILE)
 public class MyMojo extends AbstractMojo {
@@ -37,7 +34,7 @@ public class MyMojo extends AbstractMojo {
 	private File outputDir;
 
 	@Parameter(defaultValue = "nothing")
-	private ArrayList<KvPair> items;
+	private Properties pInfoProperties = new Properties();
 
 	public void execute() throws MojoExecutionException {
 		File f = outputDir;
@@ -46,22 +43,13 @@ public class MyMojo extends AbstractMojo {
 			f.mkdirs();
 		}
 
-		File pInfo = new File(f, "p-info.json");
-		JSONObject jo = new JSONObject();
-		for (KvPair item : items) {
-			jo.put(item.key, item.value);
-		}
+		File pInfo = new File(f, "p-info.properties");
 
 		try (FileOutputStream outputStream = new FileOutputStream(pInfo)) {
-			JSON.writeJSONString(outputStream, jo, SerializerFeature.PrettyFormat);
+			pInfoProperties.store(outputStream, "p-info 屬性");
 		} catch (IOException e) {
 			throw new MojoExecutionException("寫文件出錯：" + pInfo, e);
 		}
-	}
-
-	public static class KvPair {
-		public String key;
-		public String value;
 	}
 
 }
