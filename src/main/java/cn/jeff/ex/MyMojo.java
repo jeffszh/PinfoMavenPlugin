@@ -18,30 +18,26 @@ package cn.jeff.ex;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
-/**
- * Goal which touches a timestamp file.
- *
- * @goal touch
- * @phase process-sources
- */
-//@Mojo(name = "MyFirstMojo")
+@Mojo(name = "p-info", defaultPhase = LifecyclePhase.COMPILE)
 public class MyMojo extends AbstractMojo {
 
-	/**
-	 * Location of the file.
-	 *
-	 * @parameter expression="${project.build.directory}"
-	 * @required
-	 */
-	private File outputDirectory;
+	@Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
+	private File outputDir;
+
+	@Parameter(defaultValue = "nothing")
+	private ArrayList<String> notes;
 
 	public void execute() throws MojoExecutionException {
-		File f = outputDirectory;
+		File f = outputDir;
 
 		if (!f.exists()) {
 			f.mkdirs();
@@ -53,7 +49,8 @@ public class MyMojo extends AbstractMojo {
 		try {
 			w = new FileWriter(touch);
 
-			w.write("touch.txt");
+			w.write("touch.txt\n");
+			w.write("" + notes);
 		} catch (IOException e) {
 			throw new MojoExecutionException("Error creating file " + touch, e);
 		} finally {
