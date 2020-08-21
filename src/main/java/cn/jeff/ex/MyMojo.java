@@ -16,6 +16,9 @@ package cn.jeff.ex;
  * limitations under the License.
  */
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -23,7 +26,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -34,7 +37,7 @@ public class MyMojo extends AbstractMojo {
 	private File outputDir;
 
 	@Parameter(defaultValue = "nothing")
-	private ArrayList<String> notes;
+	private ArrayList<KvPair> items;
 
 	public void execute() throws MojoExecutionException {
 		File f = outputDir;
@@ -43,24 +46,22 @@ public class MyMojo extends AbstractMojo {
 			f.mkdirs();
 		}
 
-		File touch = new File(f, "touch.txt");
+		File pInfo = new File(f, "p-info.json");
+		JSONObject jo = new JSONObject();
+		for (KvPair item : items) {
+			jo.put(item.key, item.value);
+		}
 
-		FileWriter w = null;
-		try {
-			w = new FileWriter(touch);
-
-			w.write("touch.txt\n");
-			w.write("" + notes);
+		try (FileOutputStream outputStream = new FileOutputStream(pInfo)) {
+			JSON.writeJSONString(outputStream, jo, SerializerFeature.PrettyFormat);
 		} catch (IOException e) {
-			throw new MojoExecutionException("Error creating file " + touch, e);
-		} finally {
-			if (w != null) {
-				try {
-					w.close();
-				} catch (IOException e) {
-					// ignore
-				}
-			}
+			throw new MojoExecutionException("寫文件出錯：" + pInfo, e);
 		}
 	}
+
+	public static class KvPair {
+		public String key;
+		public String value;
+	}
+
 }
