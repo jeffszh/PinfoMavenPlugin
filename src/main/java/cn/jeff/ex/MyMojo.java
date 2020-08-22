@@ -16,32 +16,41 @@ package cn.jeff.ex;
  * limitations under the License.
  */
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-@Mojo(name = "p-info", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "p-info", defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
+		requiresDependencyResolution = ResolutionScope.COMPILE)
 public class MyMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
 	private File outputDir;
 
-	@Parameter(defaultValue = "")
+	@Parameter
 	private Properties pInfoProperties = new Properties();
 
 	@Parameter(defaultValue = "${project.basedir}/src/main/resources/p-info")
 	private File resourcesDir;
 
-	@Parameter(defaultValue = "")
+	@Parameter
 	private Properties properties = new Properties();
 
+	@Parameter(defaultValue = "PROPERTIES")
+	private OutputFormat outputFormat;
+
 	public void execute() throws MojoExecutionException {
+		getLog().info(JSON.toJSONString(properties, true));
+
 		File f = outputDir;
 
 		if (!f.exists()) {
@@ -59,14 +68,39 @@ public class MyMojo extends AbstractMojo {
 		if (properties != null && !properties.isEmpty()) {
 			File resDir = resourcesDir;
 			resDir.mkdirs();
-			File resFile = new File(resDir, "p-info-resource.properties");
-//			try (Writer resWriter = new FileWriter(resFile)) {
-			try (Writer resWriter = new OutputStreamWriter(new FileOutputStream(resFile), StandardCharsets.UTF_8)) {
-				properties.store(resWriter, null);
-			} catch (IOException e) {
-				e.printStackTrace();
+			switch (outputFormat) {
+				case PROPERTIES:
+					File resFile = new File(resDir, "p-info-resource.properties");
+					try (Writer resWriter = new OutputStreamWriter(new FileOutputStream(resFile), StandardCharsets.UTF_8)) {
+						properties.store(resWriter, null);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					break;
+				case XML:
+					resFile = new File(resDir, "p-info-resource.xml");
+					try (OutputStream resOutputStream = new FileOutputStream(resFile)) {
+						properties.storeToXML(resOutputStream, null);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					break;
+				case JSON:
+					resFile = new File(resDir, "p-info-resource.json");
+					try (Writer resWriter = new FileWriter(resFile)) {
+						JSON.writeJSONString(resWriter, properties, SerializerFeature.PrettyFormat);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					break;
 			}
 		}
+	}
+
+	public enum OutputFormat {
+		PROPERTIES,
+		XML,
+		JSON
 	}
 
 }
